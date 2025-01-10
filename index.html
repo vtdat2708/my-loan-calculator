@@ -1,0 +1,60 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cửa hàng VTNN Tấn Phát</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Cửa hàng VTNN Tấn Phát</h1>
+        <h2>Tính lãi vay</h2>
+
+        <form id="loanForm">
+            <div class="form-group">
+                <label for="borrowDate">Ngày vay:</label>
+                <input type="date" id="borrowDate" required>
+            </div>
+            <div class="form-group">
+                <label for="returnDate">Ngày trả:</label>
+                <input type="date" id="returnDate">
+            </div>
+            <div class="form-group">
+                <label for="interestRate">Lãi suất (%/tháng):</label>
+                <input type="number" id="interestRate" step="0.01" placeholder="Nhập lãi suất (VD: 3)" required>
+            </div>
+            <div class="form-group">
+                <label for="principalAmount">Số tiền gốc (VND):</label>
+                <input type="text" id="principalAmount" placeholder="Nhập số tiền gốc (VD: 1.000.000)" required>
+            </div>
+            <button type="button" id="addLoan">Thêm khoản vay</button>
+        </form>
+
+        <div id="loanList">
+            <h3>Danh sách khoản vay</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ngày vay</th>
+                        <th>Ngày trả</th>
+                        <th>Số ngày vay</th>
+                        <th>Tiền lãi (VND)</th>
+                        <th>Tiền gốc (VND)</th>
+                    </tr>
+                </thead>
+                <tbody id="loanTableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div id="totals">
+            <h3>Tổng cộng</h3>
+            <p id="totalPrincipal">Tổng tiền gốc: 0 VND</p>
+            <p id="totalInterest">Tổng tiền lãi: 0 VND</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
