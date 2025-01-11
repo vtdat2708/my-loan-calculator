@@ -23,12 +23,9 @@
     .form-label {
       font-weight: bold;
     }
-    #result {
-      margin-top: 20px;
-    }
-    .text-highlight {
-      color: #28a745;
-      font-weight: bold;
+    .table thead th {
+      background-color: #007bff;
+      color: #fff;
     }
   </style>
 </head>
@@ -37,151 +34,139 @@
     <h1 class="text-center mb-4">Cửa hàng VTNN Tấn Phát</h1>
     <div class="card p-4">
       <form id="loanForm">
-        <div id="loanInputs">
-          <!-- Khoản vay đầu tiên -->
-          <div class="loan-group mb-3">
-            <div class="mb-3">
-              <label class="form-label">Ngày vay (dd/mm/yyyy):</label>
-              <input type="text" class="form-control ngayVay" placeholder="Nhập ngày vay (vd: 30/02/2024)" required>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Ngày trả (dd/mm/yyyy):</label>
-              <input type="text" class="form-control ngayTra" placeholder="Nhập ngày trả (vd: 10/03/2024)" required>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Số tiền gốc (VND):</label>
-              <input type="text" class="form-control tienGoc" placeholder="Nhập số tiền gốc (vd: 1.000.000)" required>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Lãi suất (%/tháng):</label>
-              <input type="number" class="form-control laiSuat" placeholder="Nhập lãi suất (vd: 3)" step="0.01" required>
-            </div>
-          </div>
+        <div class="mb-3">
+          <label class="form-label">Ngày vay (dd/mm/yyyy):</label>
+          <input type="text" class="form-control ngayVay" placeholder="Nhập ngày vay" required>
         </div>
-        <button type="button" class="btn btn-secondary w-100 mb-3" onclick="addLoan()">Thêm khoản vay</button>
-        <button type="button" class="btn btn-primary w-100" onclick="calculateTotal()">Tính lãi suất</button>
+        <div class="mb-3">
+          <label class="form-label">Ngày trả (dd/mm/yyyy):</label>
+          <input type="text" class="form-control ngayTra" placeholder="Nhập ngày trả" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Số tiền gốc (VND):</label>
+          <input type="text" class="form-control soTienGoc" placeholder="Nhập số tiền gốc" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Lãi suất (%/tháng):</label>
+          <input type="number" class="form-control laiSuat" placeholder="Nhập lãi suất (vd: 3)" required>
+        </div>
+        <button type="button" class="btn btn-primary w-100" onclick="tinhLaiSuat()">Tính lãi suất</button>
       </form>
     </div>
 
-    <!-- Bảng hiển thị khoản vay -->
-    <div class="mt-4">
-      <h3 class="text-center">Danh sách khoản vay</h3>
-      <table class="table table-bordered table-striped">
+    <div id="result" class="mt-4">
+      <h2 class="text-center mb-4">Bảng các khoản vay</h2>
+      <table class="table table-bordered">
         <thead>
           <tr>
             <th>#</th>
             <th>Ngày vay</th>
             <th>Ngày trả</th>
-            <th>Số ngày vay</th>
-            <th>Tiền gốc (VND)</th>
-            <th>Lãi suất (%/tháng)</th>
+            <th>Số ngày</th>
+            <th>Số tiền gốc (VND)</th>
             <th>Tiền lãi (VND)</th>
+            <th>Thao tác</th>
           </tr>
         </thead>
-        <tbody id="loanTableBody"></tbody>
-        <tfoot>
-          <tr>
-            <td colspan="6" class="text-end fw-bold">Tổng tiền lãi:</td>
-            <td id="totalInterest" class="text-highlight">0 VND</td>
-          </tr>
-        </tfoot>
+        <tbody id="loanTable"></tbody>
       </table>
     </div>
   </div>
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- JavaScript -->
   <script>
-    let totalInterest = 0;
+    let loanList = [];
+    let counter = 1;
 
-    // Tự động định dạng số tiền gốc với dấu chấm
-    document.addEventListener('input', function (event) {
-      if (event.target.classList.contains('tienGoc')) {
-        let value = event.target.value.replace(/\./g, '').replace(/\D/g, '');
-        event.target.value = new Intl.NumberFormat('vi-VN').format(value);
-      }
-    });
+    function tinhLaiSuat() {
+      // Lấy giá trị từ form
+      const ngayVay = document.querySelector(".ngayVay").value;
+      const ngayTra = document.querySelector(".ngayTra").value;
+      let soTienGoc = document.querySelector(".soTienGoc").value.replace(/\./g, "");
+      const laiSuat = parseFloat(document.querySelector(".laiSuat").value);
 
-    // Hàm tách chuỗi ngày
-    function parseDate(dateStr) {
-      const [day, month, year] = dateStr.split("/").map(Number);
-      return { day, month, year };
+      // Tách chuỗi ngày vay và ngày trả
+      const [ngayVayNgay, ngayVayThang, ngayVayNam] = ngayVay.split("/").map(Number);
+      const [ngayTraNgay, ngayTraThang, ngayTraNam] = ngayTra.split("/").map(Number);
+
+      // Tính số ngày
+      const soNgay = Math.abs(
+        (new Date(ngayTraNam, ngayTraThang - 1, ngayTraNgay) -
+          new Date(ngayVayNam, ngayVayThang - 1, ngayVayNgay)) /
+          (1000 * 60 * 60 * 24)
+      );
+
+      // Tính tiền lãi
+      const tienLai = Math.round((soTienGoc * laiSuat * soNgay) / 30 / 1000) * 1000;
+
+      // Cập nhật bảng
+      loanList.push({ id: counter, ngayVay, ngayTra, soNgay, soTienGoc, tienLai });
+      renderTable();
+
+      // Reset form
+      document.getElementById("loanForm").reset();
+      counter++;
     }
 
-    // Hàm tính số ngày dựa trên ngày nhập
-    function calculateDays(day1, month1, year1, day2, month2, year2) {
-      const daysInMonth = 30; // Giả định mỗi tháng có 30 ngày
-      const totalDays1 = year1 * 12 * daysInMonth + month1 * daysInMonth + day1;
-      const totalDays2 = year2 * 12 * daysInMonth + month2 * daysInMonth + day2;
-      return totalDays2 - totalDays1;
-    }
+    function renderTable() {
+      const tableBody = document.getElementById("loanTable");
+      tableBody.innerHTML = "";
+      let totalGoc = 0;
+      let totalLai = 0;
 
-    // Hàm thêm khoản vay
-    function addLoan() {
-      const loanGroup = document.createElement('div');
-      loanGroup.className = 'loan-group mb-3';
-      loanGroup.innerHTML = `
-        <div class="mb-3">
-          <label class="form-label">Ngày vay (dd/mm/yyyy):</label>
-          <input type="text" class="form-control ngayVay" placeholder="Nhập ngày vay (vd: 30/02/2024)" required>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Ngày trả (dd/mm/yyyy):</label>
-          <input type="text" class="form-control ngayTra" placeholder="Nhập ngày trả (vd: 10/03/2024)" required>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Số tiền gốc (VND):</label>
-          <input type="text" class="form-control tienGoc" placeholder="Nhập số tiền gốc (vd: 1.000.000)" required>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Lãi suất (%/tháng):</label>
-          <input type="number" class="form-control laiSuat" placeholder="Nhập lãi suất (vd: 3)" step="0.01" required>
-        </div>
-      `;
-      document.getElementById('loanInputs').appendChild(loanGroup);
-    }
+      loanList.forEach((loan, index) => {
+        totalGoc += parseInt(loan.soTienGoc);
+        totalLai += loan.tienLai;
 
-    // Hàm tính tổng lãi suất
-    function calculateTotal() {
-      const loanGroups = document.querySelectorAll('.loan-group');
-      const tableBody = document.getElementById('loanTableBody');
-      tableBody.innerHTML = ''; // Xóa các dòng cũ trước khi tính lại
-      totalInterest = 0;
-
-      loanGroups.forEach((group, index) => {
-        const ngayVayStr = group.querySelector('.ngayVay').value;
-        const ngayTraStr = group.querySelector('.ngayTra').value;
-        const tienGocStr = group.querySelector('.tienGoc').value.replace(/\./g, '');
-        const laiSuat = parseFloat(group.querySelector('.laiSuat').value);
-
-        const { day: dayVay, month: monthVay, year: yearVay } = parseDate(ngayVayStr);
-        const { day: dayTra, month: monthTra, year: yearTra } = parseDate(ngayTraStr);
-
-        const soNgayVay = calculateDays(dayVay, monthVay, yearVay, dayTra, monthTra, yearTra);
-        const tienGoc = parseFloat(tienGocStr);
-        const laiNgay = (laiSuat / 30) * tienGoc;
-        const tienLai = Math.round((laiNgay * soNgayVay) / 1000) * 1000;
-
-        totalInterest += tienLai;
-
-        // Thêm dòng mới vào bảng
-        const row = `
+        tableBody.innerHTML += `
           <tr>
             <td>${index + 1}</td>
-            <td>${ngayVayStr}</td>
-            <td>${ngayTraStr}</td>
-            <td>${soNgayVay}</td>
-            <td>${tienGoc.toLocaleString('vi-VN')} VND</td>
-            <td>${laiSuat}%</td>
-            <td>${tienLai.toLocaleString('vi-VN')} VND</td>
+            <td>${loan.ngayVay}</td>
+            <td>${loan.ngayTra}</td>
+            <td>${loan.soNgay}</td>
+            <td>${formatCurrency(loan.soTienGoc)}</td>
+            <td>${formatCurrency(loan.tienLai)}</td>
+            <td>
+              <button class="btn btn-warning btn-sm" onclick="editLoan(${loan.id})">Chỉnh sửa</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteLoan(${loan.id})">Xóa</button>
+            </td>
           </tr>
         `;
-        tableBody.insertAdjacentHTML('beforeend', row);
       });
 
-      // Cập nhật tổng tiền lãi
-      document.getElementById('totalInterest').textContent = totalInterest.toLocaleString('vi-VN') + ' VND';
+      // Thêm tổng cộng
+      tableBody.innerHTML += `
+        <tr class="table-secondary">
+          <td colspan="4" class="text-end fw-bold">Tổng:</td>
+          <td>${formatCurrency(totalGoc)}</td>
+          <td>${formatCurrency(totalLai)}</td>
+          <td></td>
+        </tr>
+      `;
     }
+
+    function editLoan(id) {
+      const loan = loanList.find((item) => item.id === id);
+      document.querySelector(".ngayVay").value = loan.ngayVay;
+      document.querySelector(".ngayTra").value = loan.ngayTra;
+      document.querySelector(".soTienGoc").value = formatCurrency(loan.soTienGoc);
+      document.querySelector(".laiSuat").value = loan.laiSuat;
+      deleteLoan(id);
+    }
+
+    function deleteLoan(id) {
+      loanList = loanList.filter((item) => item.id !== id);
+      renderTable();
+    }
+
+    function formatCurrency(value) {
+      return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    // Format tự động thêm dấu chấm khi nhập tiền gốc
+    document.querySelector(".soTienGoc").addEventListener("input", function () {
+      this.value = formatCurrency(this.value.replace(/\./g, ""));
+    });
   </script>
 </body>
 </html>
