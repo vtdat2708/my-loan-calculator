@@ -37,23 +37,29 @@
     <h1 class="text-center mb-4">Cửa hàng VTNN Tấn Phát</h1>
     <div class="card p-4">
       <form id="loanForm">
-        <div class="mb-3">
-          <label for="ngayVay" class="form-label">Ngày vay (dd/mm/yyyy):</label>
-          <input type="text" class="form-control" id="ngayVay" placeholder="Nhập ngày vay (vd: 30/02/2024)" required>
+        <div id="loanInputs">
+          <!-- Khoản vay đầu tiên -->
+          <div class="loan-group mb-3">
+            <div class="mb-3">
+              <label class="form-label">Ngày vay (dd/mm/yyyy):</label>
+              <input type="text" class="form-control ngayVay" placeholder="Nhập ngày vay (vd: 30/02/2024)" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Ngày trả (dd/mm/yyyy):</label>
+              <input type="text" class="form-control ngayTra" placeholder="Nhập ngày trả (vd: 10/03/2024)" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Số tiền gốc (VND):</label>
+              <input type="text" class="form-control tienGoc" placeholder="Nhập số tiền gốc (vd: 1.000.000)" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Lãi suất (%/tháng):</label>
+              <input type="number" class="form-control laiSuat" placeholder="Nhập lãi suất (vd: 3)" step="0.01" required>
+            </div>
+          </div>
         </div>
-        <div class="mb-3">
-          <label for="ngayTra" class="form-label">Ngày trả (dd/mm/yyyy):</label>
-          <input type="text" class="form-control" id="ngayTra" placeholder="Nhập ngày trả (vd: 10/03/2024)" required>
-        </div>
-        <div class="mb-3">
-          <label for="tienGoc" class="form-label">Số tiền gốc (VND):</label>
-          <input type="text" class="form-control" id="tienGoc" placeholder="Nhập số tiền gốc (vd: 1.000.000)" required>
-        </div>
-        <div class="mb-3">
-          <label for="laiSuat" class="form-label">Lãi suất (%/tháng):</label>
-          <input type="number" class="form-control" id="laiSuat" placeholder="Nhập lãi suất (vd: 3)" step="0.01" required>
-        </div>
-        <button type="button" class="btn btn-primary w-100" onclick="calculateInterest()">Tính lãi suất</button>
+        <button type="button" class="btn btn-secondary w-100 mb-3" onclick="addLoan()">Thêm khoản vay</button>
+        <button type="button" class="btn btn-primary w-100" onclick="calculateTotal()">Tính tổng lãi suất</button>
       </form>
       <div id="result" class="mt-4 alert alert-success d-none"></div>
     </div>
@@ -62,6 +68,14 @@
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    // Tự động định dạng số tiền gốc với dấu chấm
+    document.addEventListener('input', function (event) {
+      if (event.target.classList.contains('tienGoc')) {
+        let value = event.target.value.replace(/\./g, '').replace(/\D/g, '');
+        event.target.value = new Intl.NumberFormat('vi-VN').format(value);
+      }
+    });
+
     // Hàm tách chuỗi ngày
     function parseDate(dateStr) {
       const [day, month, year] = dateStr.split("/").map(Number);
@@ -76,38 +90,64 @@
       return totalDays2 - totalDays1;
     }
 
-    // Hàm tính lãi suất
-    function calculateInterest() {
-      const ngayVayStr = document.getElementById("ngayVay").value;
-      const ngayTraStr = document.getElementById("ngayTra").value;
-      const tienGocStr = document.getElementById("tienGoc").value.replace(/\./g, "");
-      const laiSuat = parseFloat(document.getElementById("laiSuat").value);
+    // Hàm thêm khoản vay
+    function addLoan() {
+      const loanGroup = document.createElement('div');
+      loanGroup.className = 'loan-group mb-3';
+      loanGroup.innerHTML = `
+        <div class="mb-3">
+          <label class="form-label">Ngày vay (dd/mm/yyyy):</label>
+          <input type="text" class="form-control ngayVay" placeholder="Nhập ngày vay (vd: 30/02/2024)" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Ngày trả (dd/mm/yyyy):</label>
+          <input type="text" class="form-control ngayTra" placeholder="Nhập ngày trả (vd: 10/03/2024)" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Số tiền gốc (VND):</label>
+          <input type="text" class="form-control tienGoc" placeholder="Nhập số tiền gốc (vd: 1.000.000)" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Lãi suất (%/tháng):</label>
+          <input type="number" class="form-control laiSuat" placeholder="Nhập lãi suất (vd: 3)" step="0.01" required>
+        </div>
+      `;
+      document.getElementById('loanInputs').appendChild(loanGroup);
+    }
 
-      // Tách ngày vay và ngày trả
-      const { day: dayVay, month: monthVay, year: yearVay } = parseDate(ngayVayStr);
-      const { day: dayTra, month: monthTra, year: yearTra } = parseDate(ngayTraStr);
+    // Hàm tính tổng lãi suất
+    function calculateTotal() {
+      const loanGroups = document.querySelectorAll('.loan-group');
+      let totalInterest = 0;
+      let totalPrincipal = 0;
 
-      // Tính số ngày vay
-      const soNgayVay = calculateDays(dayVay, monthVay, yearVay, dayTra, monthTra, yearTra);
+      loanGroups.forEach(group => {
+        const ngayVayStr = group.querySelector('.ngayVay').value;
+        const ngayTraStr = group.querySelector('.ngayTra').value;
+        const tienGocStr = group.querySelector('.tienGoc').value.replace(/\./g, '');
+        const laiSuat = parseFloat(group.querySelector('.laiSuat').value);
 
-      if (soNgayVay < 0) {
-        alert("Ngày trả phải sau ngày vay!");
-        return;
-      }
+        const { day: dayVay, month: monthVay, year: yearVay } = parseDate(ngayVayStr);
+        const { day: dayTra, month: monthTra, year: yearTra } = parseDate(ngayTraStr);
 
-      // Tính tiền lãi
-      const tienGoc = parseFloat(tienGocStr);
-      const laiNgay = (laiSuat / 30) * tienGoc; // Lãi suất trên ngày
-      const tienLai = Math.round((laiNgay * soNgayVay) / 1000) * 1000; // Làm tròn đến 1000
-      const tongTien = tienGoc + tienLai;
+        const soNgayVay = calculateDays(dayVay, monthVay, yearVay, dayTra, monthTra, yearTra);
+
+        if (soNgayVay >= 0) {
+          const tienGoc = parseFloat(tienGocStr);
+          const laiNgay = (laiSuat / 30) * tienGoc;
+          const tienLai = Math.round((laiNgay * soNgayVay) / 1000) * 1000;
+
+          totalInterest += tienLai;
+          totalPrincipal += tienGoc;
+        }
+      });
 
       // Hiển thị kết quả
-      const resultDiv = document.getElementById("result");
-      resultDiv.classList.remove("d-none");
+      const resultDiv = document.getElementById('result');
+      resultDiv.classList.remove('d-none');
       resultDiv.innerHTML = `
-        <p>Số ngày vay: <span class="text-highlight">${soNgayVay} ngày</span></p>
-        <p>Tiền lãi: <span class="text-highlight">${tienLai.toLocaleString("vi-VN")} VND</span></p>
-        <p>Tổng tiền phải trả: <span class="text-highlight">${tongTien.toLocaleString("vi-VN")} VND</span></p>
+        <p>Tổng số tiền gốc: <span class="text-highlight">${totalPrincipal.toLocaleString('vi-VN')} VND</span></p>
+        <p>Tổng tiền lãi: <span class="text-highlight">${totalInterest.toLocaleString('vi-VN')} VND</span></p>
       `;
     }
   </script>
