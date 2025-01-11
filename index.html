@@ -1,60 +1,115 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cửa hàng VTNN Tấn Phát</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cửa hàng VTNN Tấn Phát - Tính lãi suất</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .card {
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .btn-primary {
+      background-color: #007bff;
+      border: none;
+    }
+    .btn-primary:hover {
+      background-color: #0056b3;
+    }
+    .form-label {
+      font-weight: bold;
+    }
+    #result {
+      margin-top: 20px;
+    }
+    .text-highlight {
+      color: #28a745;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Cửa hàng VTNN Tấn Phát</h1>
-        <h2>Tính lãi vay</h2>
-
-        <form id="loanForm">
-            <div class="form-group">
-                <label for="borrowDate">Ngày vay:</label>
-                <input type="date" id="borrowDate" required>
-            </div>
-            <div class="form-group">
-                <label for="returnDate">Ngày trả:</label>
-                <input type="date" id="returnDate">
-            </div>
-            <div class="form-group">
-                <label for="interestRate">Lãi suất (%/tháng):</label>
-                <input type="number" id="interestRate" step="0.01" placeholder="Nhập lãi suất (VD: 3)" required>
-            </div>
-            <div class="form-group">
-                <label for="principalAmount">Số tiền gốc (VND):</label>
-                <input type="text" id="principalAmount" placeholder="Nhập số tiền gốc (VD: 1.000.000)" required>
-            </div>
-            <button type="button" id="addLoan">Thêm khoản vay</button>
-        </form>
-
-        <div id="loanList">
-            <h3>Danh sách khoản vay</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Ngày vay</th>
-                        <th>Ngày trả</th>
-                        <th>Số ngày vay</th>
-                        <th>Tiền lãi (VND)</th>
-                        <th>Tiền gốc (VND)</th>
-                    </tr>
-                </thead>
-                <tbody id="loanTableBody">
-                </tbody>
-            </table>
+  <div class="container py-5">
+    <h1 class="text-center mb-4">Cửa hàng VTNN Tấn Phát</h1>
+    <div class="card p-4">
+      <form id="loanForm">
+        <div class="mb-3">
+          <label for="ngayVay" class="form-label">Ngày vay (dd/mm/yyyy):</label>
+          <input type="text" class="form-control" id="ngayVay" placeholder="Nhập ngày vay (vd: 30/02/2024)" required>
         </div>
-
-        <div id="totals">
-            <h3>Tổng cộng</h3>
-            <p id="totalPrincipal">Tổng tiền gốc: 0 VND</p>
-            <p id="totalInterest">Tổng tiền lãi: 0 VND</p>
+        <div class="mb-3">
+          <label for="ngayTra" class="form-label">Ngày trả (dd/mm/yyyy):</label>
+          <input type="text" class="form-control" id="ngayTra" placeholder="Nhập ngày trả (vd: 10/03/2024)" required>
         </div>
+        <div class="mb-3">
+          <label for="tienGoc" class="form-label">Số tiền gốc (VND):</label>
+          <input type="text" class="form-control" id="tienGoc" placeholder="Nhập số tiền gốc (vd: 1.000.000)" required>
+        </div>
+        <div class="mb-3">
+          <label for="laiSuat" class="form-label">Lãi suất (%/tháng):</label>
+          <input type="number" class="form-control" id="laiSuat" placeholder="Nhập lãi suất (vd: 3)" step="0.01" required>
+        </div>
+        <button type="button" class="btn btn-primary w-100" onclick="calculateInterest()">Tính lãi suất</button>
+      </form>
+      <div id="result" class="mt-4 alert alert-success d-none"></div>
     </div>
+  </div>
 
-    <script src="script.js"></script>
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Hàm tách chuỗi ngày
+    function parseDate(dateStr) {
+      const [day, month, year] = dateStr.split("/").map(Number);
+      return { day, month, year };
+    }
+
+    // Hàm tính số ngày dựa trên ngày nhập
+    function calculateDays(day1, month1, year1, day2, month2, year2) {
+      const daysInMonth = 30; // Giả định mỗi tháng có 30 ngày
+      const totalDays1 = year1 * 12 * daysInMonth + month1 * daysInMonth + day1;
+      const totalDays2 = year2 * 12 * daysInMonth + month2 * daysInMonth + day2;
+      return totalDays2 - totalDays1;
+    }
+
+    // Hàm tính lãi suất
+    function calculateInterest() {
+      const ngayVayStr = document.getElementById("ngayVay").value;
+      const ngayTraStr = document.getElementById("ngayTra").value;
+      const tienGocStr = document.getElementById("tienGoc").value.replace(/\./g, "");
+      const laiSuat = parseFloat(document.getElementById("laiSuat").value);
+
+      // Tách ngày vay và ngày trả
+      const { day: dayVay, month: monthVay, year: yearVay } = parseDate(ngayVayStr);
+      const { day: dayTra, month: monthTra, year: yearTra } = parseDate(ngayTraStr);
+
+      // Tính số ngày vay
+      const soNgayVay = calculateDays(dayVay, monthVay, yearVay, dayTra, monthTra, yearTra);
+
+      if (soNgayVay < 0) {
+        alert("Ngày trả phải sau ngày vay!");
+        return;
+      }
+
+      // Tính tiền lãi
+      const tienGoc = parseFloat(tienGocStr);
+      const laiNgay = (laiSuat / 30) * tienGoc; // Lãi suất trên ngày
+      const tienLai = Math.round((laiNgay * soNgayVay) / 1000) * 1000; // Làm tròn đến 1000
+      const tongTien = tienGoc + tienLai;
+
+      // Hiển thị kết quả
+      const resultDiv = document.getElementById("result");
+      resultDiv.classList.remove("d-none");
+      resultDiv.innerHTML = `
+        <p>Số ngày vay: <span class="text-highlight">${soNgayVay} ngày</span></p>
+        <p>Tiền lãi: <span class="text-highlight">${tienLai.toLocaleString("vi-VN")} VND</span></p>
+        <p>Tổng tiền phải trả: <span class="text-highlight">${tongTien.toLocaleString("vi-VN")} VND</span></p>
+      `;
+    }
+  </script>
 </body>
 </html>
